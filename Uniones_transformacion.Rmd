@@ -41,10 +41,10 @@ Con select(), seleccionar un subconjunto de vuelos que contenga como variables a
 ```{r subconjunto_vuelos, echo=FALSE}
 vuelos2<- vuelos %>%
  select(anio:dia, hora, origen, destino, codigo_cola, aerolinea)
-
+#View(vuelos)
 vuelos2
 
-#View(vuelos2)
+
 ```
 
 Imaginemos que se quiere incluir el nombre completo de cada aerolínea en vuelos2. Para ello combinamos los datos de aerolineas y vuelos2 con left_join():
@@ -187,8 +187,8 @@ vuelos2 %>%
 Un vector de caracteres con nombres: by = c("a" = "b"). Esto va a unir la variable a en la tabla x con la variabla b en la tabla y. Las variables de x se usarán en el output.
 
 ```{r vector_caract, echo=FALSE}
-#vuelos2 %>%
- #left_join(aeropuertos, by="codigo_aeropuerto")
+vuelos2 %>%
+ left_join(aeropuertos, by="codigo_aeropuerto")
 
 #vuelos2 %>%
  # left_join(aeropuertos)
@@ -224,7 +224,7 @@ mean_atraso <- vuelos %>%
 
 
 mean_atraso %>%
-  ggplot(aes(longitud, latitud, size=atraso, colour=atraso)) +
+  ggplot(aes(longitud, latitud, colour=atraso)) +
   borders("state") +
   geom_point() +
   coord_quickmap()
@@ -278,7 +278,7 @@ vuelo_clima <- vuelos %>%
 
 vuelo_clima %>%
   group_by(precipitacion) %>%
-  summarise(atraso = mean(atraso_salida, na.rm = TRUE)) %>%
+  summarise(atraso = mean(atraso_llegada, na.rm = TRUE)) %>%
   ggplot(aes(x = precipitacion, y = atraso)) +
   geom_line() +
   geom_point()
