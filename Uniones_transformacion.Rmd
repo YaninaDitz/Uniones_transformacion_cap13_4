@@ -187,8 +187,8 @@ vuelos2 %>%
 Un vector de caracteres con nombres: by = c("a" = "b"). Esto va a unir la variable a en la tabla x con la variabla b en la tabla y. Las variables de x se usarán en el output.
 
 ```{r vector_caract, echo=FALSE}
-vuelos2 %>%
- left_join(aeropuertos, by="codigo_aeropuerto")
+#vuelos2 %>%
+ #left_join(aeropuertos, by="codigo_aeropuerto")
 
 #vuelos2 %>%
  # left_join(aeropuertos)
