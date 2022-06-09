@@ -505,3 +505,53 @@ aviones_transferidos <- aerolinea_avion %>%
 aviones_transferidos
 ```
 
+## Problemas con las uniones
+Aquí se explica como sería una buena manera de limpiar los datos, ya que los datos usados en este capítulo están limpios. Tus datos difícilmente estarán tan ordenados, por lo que hay algunas consideraciones y pasos a tener en cuenta para que las uniones funcionen adecuadamente sobre tus propios datos.
+
+**1** Comienza identificando las variables que forman las claves primarias en cada tabla. Usualmente debieras hacerlo considerando tus conocimientos de los datos, no observando empíricamente las combinaciones de variables que resultan en un identificador único. Si te centras en las variables sin pensar en sus significados, puedes tener la (mala) suerte de encontrar una combinación única en tus datos pero que no sea válida en general.
+
+Por ejemplo, la altura y la longitud identifican de manera única cada aeropuerto, ¡pero no son buenos identificadores!
+
+```{r verifica_claves}
+aeropuertos %>% count(altura, longitud) %>% filter(n > 1)
+```
+
+**2** Verifica que ninguna de las variables en la clave primaria esté perdida. ¡Si hay un valor faltante no podrá identificar una observación!
+
+**3** Verifica que las claves foráneas coincidan con las claves primarias en otra tabla. La mejor forma de hacerlo es mediante un *anti_join()*. Es común que las claves no coincidan debido a errores en la entrada de datos. Arreglar este problema requiere mucho trabajo.
+
+Si tienes claves perdidas, debes tener cuidado en el uso de unión interior versus unión exterior y considerar cuidadosamente si quieres descartar las filas que no tengan coincidencias.
+
+Ten en cuenta que verificar el número de filas antes y después de unir no es suficiente para asegurar que la unión funcionó de forma exitosa. Si tienes una unión interior con claves duplicadas en ambas tablas, puedes tener la mala suerte de que el número de filas descartadas sea igual al número de filas duplicadas.
+
+## Operaciones de conjuntos
+
+Si bien lo usamos de manera poco frecuente, en ocasiones es útil cuando quieres dividir un filtro complejo en partes maś simples. Todas estas operaciones funcionan con una fila completa, comparando los valores de cada variable. Esto espera que los input x e y tengan las mismas variables y trata las observaciones como conjuntos:
+
+* *intersect(x, y):* devuelve las observaciones comunes en x e y.
+* *union(x, y):* devuelve las observaciones únicas en x e y.
+* *setdiff(x, y):* devuelve las observaciones en x pero no en y.
+
+```{r conjunto_simple, echo=TRUE}
+df1 <- tribble(
+  ~x, ~y,
+  1, 1,
+  2, 1
+)
+df2 <- tribble(
+  ~x, ~y,
+  1, 1,
+  1, 2
+)
+```
+
+```{r conj_operaciones}
+intersect(df1, df2)
+
+union(df1, df2)
+
+setdiff(df1, df2)
+
+
+setdiff(df2, df1)
+```
