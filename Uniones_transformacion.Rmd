@@ -362,6 +362,9 @@ vuelos %>%
 **Rtas.:** Los vuelos que no tienen código de cola, tampoco tienen registro de la hora de llegada, ya que son vuelos cancelados. 
 
 ```{r act-13-5.1, echo=TRUE}
+vuelos %>%
+  anti_join(aviones, by = "codigo_cola") %>%
+  count(codigo_cola, sort = TRUE)
 vuelos %>% 
   filter(!is.na(codigo_cola), !is.na(horario_llegada)) %>%
   nrow()
@@ -411,10 +414,23 @@ Ahora se puede unir el resultado con la tabla `vuelos` y así conservar los que
 cumplen con el criterio.
 
 ```{r cien_vuelos_semijoin, echo=TRUE}
-
 vuelos %>%
   semi_join(cien_vuelos, by = "codigo_cola")
 ```
+
+**3** Combina datos::vehiculos y datos::comunes para encontrar los registros de los modelos más comunes.
+
+Puede pasar que dos fabricantes tengan un mismo modelo de auto, para evitar eso consideremos dos variables
+```{r}
+datos::vehiculos
+datos::comunes
+
+vehiculos %>% 
+  semi_join(comunes, by=c("fabricante","modelo"))
+
+```
+
+
 **4** Encuentra las 48 horas (en el transcurso del año) que tengan los peores atrasos. Haz 
 una referencia cruzada con la tabla `clima`. ¿Puedes observar patrones?
 
@@ -431,6 +447,17 @@ peores_horas_salidas <- vuelos %>%
   ungroup() %>%
   arrange(desc(atraso_salida)) %>%
   slice(1:48)
+
+
+
+#opcion 2
+peores_horas_salidas <- vuelos %>%
+  mutate(hora = salida_programada %/% 100) %>%
+  group_by(origen, anio, mes, dia, hora) %>%
+  summarise(atraso_salida = mean(atraso_salida, na.rm = TRUE)) %>%
+  arrange(desc(atraso_salida)) %>%
+  slice(1:48)
+
 ```
 
 ```{r peores_horas_llegada}
@@ -440,7 +467,7 @@ peores_horas_llegada<- vuelos %>%
   summarise(atraso_llegada = mean(atraso_llegada, na.rm = TRUE)) %>%
   ungroup() %>%
   arrange(desc(atraso_llegada)) %>%
-  slice(1:48)
+  head(48)
 ```
 
 Este resultado se debe unir con la tabla `clima`.
@@ -479,6 +506,14 @@ ggplot(clima_peores_horas_llegadas, aes(x = precipitacion, y = velocidad_viento,
 
 **5** ¿Qué te indica `anti_join(vuelos, aeropuertos, by = c("destino" = "codigo_aeropuerto"))`?
    ¿Qué te indica `anti_join(aeropuertos, vuelos, by = c("codigo_aeropuerto" = "destino"))`?
+```{r}
+ver1<-anti_join(vuelos, aeropuertos, by = c("destino" = "codigo_aeropuerto"))
+ver1
+
+ver2<-anti_join(aeropuertos, vuelos, by = c("codigo_aeropuerto" = "destino"))
+ver2
+
+```
 
 
 La primera expresión entrega los vuelos cuyo destino es un aeropuerto fuera
@@ -510,7 +545,7 @@ Estos aviones tendrán una cuenta mayor a uno en la tabla anterior.
 aerolinea_avion %>%
   count(codigo_cola) %>%
   filter(n > 1) %>%
-  nrow()
+  nrow() 
 ```
 
 Veamos ahora las transferencias de aviones entre aerolíneas.
