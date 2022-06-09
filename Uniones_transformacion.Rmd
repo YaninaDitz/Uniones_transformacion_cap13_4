@@ -314,3 +314,194 @@ También podemos ver las comparaciones, o similitudes, con SQL:
 ![](dplyr_sql.PNG)
 
 Unir distintas variables entre tablas, por ejemplo inner_join(x, y, by = c("a" = "b")), usa una sintaxis ligeramente distinta en SQL: SELECT * FROM x INNER JOIN y ON x.a = y.b. Como la sintaxis sugiere, SQL soporta un rango más amplio de tipos de uniones que dplyr, ya que puedes conectar tablas usando restricciones distintas a las de igualdad.
+
+
+# Uniones de filtro
+Las uniones de filtro unen observaciones de la misma forma que las uniones de transformación pero afectan a las observaciones, no a las variables. Existen dos tipos:
+
+-*semi_join(x, y)* mantiene todas las observaciones en x con coincidencias en y.
+-*anti_join(x, y)* descarta todas las observaciones en x con coincidencias en y.
+
+Las semi uniones son útiles para unir tablas resumen previamente filtradas con las filas originales.
+```{r destino_populares, echo=TRUE}
+destinos_populares <- vuelos %>%
+  count(destino, sort = TRUE) %>%
+  head(10)
+destinos_populares
+```
+Ahora quieres encontrar cada vuelo que fue a alguno de esos destinos. Puedes construir un filtro:
+
+```{r filtro, echo=TRUE}
+vuelos %>%
+  filter(destino %in% destinos_populares$destino)
+```
+Puedes, en cambio, usar semi_join(), que conecta dos tablas de manera similar a una unión de transformación, pero en lugar de agregar nuevas columnas, mantiene las filas en x que tienen coincidencias en y:
+```{r semiuniones, echo=TRUE}
+vuelos %>%
+  semi_join(destinos_populares)
+```
+
+
+Las anti uniones son útiles para encontrar desajustes. Por ejemplo, al conectar aviones y vuelos, podría interesarte saber que existen muchos vuelos que no tienen coincidencias en aviones:
+
+```{r antuniones, echo=TRUE}
+vuelos %>%
+  anti_join(aviones, by = "codigo_cola") %>%
+  count(codigo_cola, sort = TRUE)
+```
+
+
+**1** ¿Qué significa que un vuelo no tenga `codigo_cola`? ¿Qué tienen en común los códigos 
+   de cola que no tienen registros coincidentes en `aviones`? (Pista: Una variable explica 
+   ~90% de los problemas.)
+   
+**Rtas.:** Los vuelos que no tienen código de cola, tampoco tienen registro de la hora de llegada, ya que son vuelos cancelados. 
+
+```{r act-13-5.1, echo=TRUE}
+vuelos %>% 
+  filter(!is.na(codigo_cola), !is.na(horario_llegada)) %>%
+  nrow()
+```
+Muchos de los vuelos sin código cola en `aviones` pertenecen a
+American Airlines (AA) o Envoy Airlines (MQ) como se detalla en la documentación.
+
+```{r sin_cod, echo=TRUE}
+vuelos %>%
+  anti_join(aviones, by = "codigo_cola") %>%
+  count(aerolinea, sort = TRUE) %>%
+  mutate(p = n / sum(n))
+```
+
+
+Sin embargo, no todos los códigos que aparecen en `vuelos` están perdidos en
+`aviones`.
+
+```{r cod_no_perdidos, echo=TRUE}
+vuelos %>%
+  distinct(aerolinea, codigo_cola) %>%
+  left_join(aviones, by = "codigo_cola") %>%
+  group_by(aerolinea) %>%
+  summarise(total_aviones = n(),
+            faltan_en_aviones = sum(is.na(modelo))) %>%
+  mutate(porcentaje_perdidos = faltan_en_aviones / total_aviones) %>%
+  arrange(desc(porcentaje_perdidos))
+
+```
+
+
+**2** Filtra los vuelos para mostrar únicamente los aviones que han realizado al menos cien viajes.
+
+Debemos calcular que aviones tienen 100 o más vuelos. Hay que filtrar los
+aviones sin código cola o estos se van a considerar como un único avión.
+
+```{r cien_vuelos, echo=TRUE}
+cien_vuelos <- vuelos %>%
+  filter(!is.na(codigo_cola)) %>%
+  group_by(codigo_cola) %>%
+  count() %>%
+  filter(n >= 100)
+
+cien_vuelos
+```
+Ahora se puede unir el resultado con la tabla `vuelos` y así conservar los que
+cumplen con el criterio.
+
+```{r cien_vuelos_semijoin, echo=TRUE}
+
+vuelos %>%
+  semi_join(cien_vuelos, by = "codigo_cola")
+```
+**4** Encuentra las 48 horas (en el transcurso del año) que tengan los peores atrasos. Haz 
+una referencia cruzada con la tabla `clima`. ¿Puedes observar patrones?
+
+
+Haremos el desarrollo considerando las horas con mayor acumulación de atrasos en
+la salida. El otro caso queda como ejercicio.
+
+El ejercicio no pide que sean los dos peores días, sino las peores 48 horas,
+por lo que debemos tomar las peores horas en el transcurso de varios días.
+
+```{r peores_horas, echo=TRUE}
+peores_horas <- vuelos %>%
+  mutate(hora = salida_programada %/% 100) %>%
+  group_by(origen, anio, mes, dia, hora) %>%
+  summarise(atraso_salida = mean(atraso_salida, na.rm = TRUE)) %>%
+  ungroup() %>%
+  arrange(desc(atraso_salida)) %>%
+  slice(1:48)
+```
+
+Este resultado se debe unir con la tabla `clima`.
+```{r}
+clima_peores_horas <- semi_join(clima, peores_horas, 
+                                  by = c("origen", "anio", "mes", "dia", "hora"))
+```
+
+
+Para el clima, nos enfocaremos en la precipitación, velocidad del viento y
+temperatura. Muchas de estas observaciones tienen una velocidad del viento
+por sobre el promedio (10 millas por hora) o lluvias.
+
+```{r}
+select(clima_peores_horas, temperatura, velocidad_viento, precipitacion) %>%
+  print(n = 48)
+```
+
+```{r}
+ggplot(clima_peores_horas, aes(x = precipitacion, y = velocidad_viento, color = temperatura)) +
+  geom_point()
+```
+
+Para extenderse con mayor detalle en ese ejercicio, es necesario usar las
+herramientas del capítulo Análisis Exploratorio de Datos.
+
+
+**5** ¿Qué te indica `anti_join(vuelos, aeropuertos, by = c("destino" = "codigo_aeropuerto"))`?
+   ¿Qué te indica `anti_join(aeropuertos, vuelos, by = c("codigo_aeropuerto" = "destino"))`?
+
+
+La primera expresión entrega los vuelos cuyo destino es un aeropuerto fuera
+de los EEUU.
+
+La segunda expresión entrega lo aeropuertos de los EEUU que no son el destino
+de los vuelos contenidos en los datos.
+
+Los datos contienen todos los vuelos de los aeropuertos de Nueva York, por
+lo que también contiene los vuelos con escalas intermedias.
+
+
+**6** Puedes esperar que exista una relación implícita entre aviones y aerolíneas, dado que cada avión es operado por una única aerolínea. Confirma o descarta esta hipótesis usando las 
+herramientas que aprendiste más arriba.
+   
+
+Veamos las combinaciones únicas de aerolínea y avión.
+
+```{r combinacion_aerolinea_avion, echo=TRUE}
+aerolinea_avion <- vuelos %>%
+  filter(!is.na(codigo_cola)) %>%
+  distinct(aerolinea, codigo_cola)
+```
+
+Podría darse el caso en que una aerolínea vende algunos de sus aviones a otra.
+Estos aviones tendrán una cuenta mayor a uno en la tabla anterior.
+
+```{r venta, echo=TRUE}
+aerolinea_avion %>%
+  count(codigo_cola) %>%
+  filter(n > 1) %>%
+  nrow()
+```
+
+Veamos ahora las transferencias de aviones entre aerolíneas.
+
+```{r carrier_transfer_tbl}
+aviones_transferidos <- aerolinea_avion %>%
+  # conservo los aviones que han volado para más de una aerolínea
+  group_by(codigo_cola) %>%
+  filter(n() > 1) %>%
+  # uno los códigos con los nombres de aerolínea
+  left_join(aerolineas, by = "aerolinea") %>%
+  arrange(aerolinea, codigo_cola)
+aviones_transferidos
+```
+
