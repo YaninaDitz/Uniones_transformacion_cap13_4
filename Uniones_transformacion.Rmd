@@ -1,8 +1,12 @@
 ---
 title: "Uniones de Transformacion"
 author: "Ditz Yanina"
-date: '2022-05-15'
-output: html_document
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    toc: true
+    number_sections: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
@@ -11,7 +15,7 @@ library(tidyverse)
 library(datos)
 ```
 
-## Repaso
+# Repaso
 Una clave primaria identifica únicamente una observación en su propia tabla.
 Una clave foránea únicamente identifica una observación en otra tabla.
 Una forma de verificar cuando una clave es primaria es usando count() con las claves primarias y buscar las entradas con n mayor a uno. De esta manera se verifica la forma única de observación:
@@ -33,12 +37,12 @@ clima %>%
   count(anio, mes, dia, hora, origen) %>%
   filter(n > 1)
 ```
-## Uniones de transformación
+# Uniones de transformación
 Una unión de transformación te permite combinar variables a partir de dos tablas. Primero busca coincidencias de observaciones de acuerdo a sus claves y luego copia las variables de una tabla en la otra.
 
 Con select(), seleccionar un subconjunto de vuelos que contenga como variables a las claves foraneas. 
 
-```{r subconjunto_vuelos, echo=FALSE}
+```{r subconjunto_vuelos}
 vuelos2<- vuelos %>%
  select(anio:dia, hora, origen, destino, codigo_cola, aerolinea)
 #View(vuelos)
@@ -75,7 +79,7 @@ esto para ser un poco más complicado al momento de enteder lo que se quiere hac
 ## Uniones
 Consideremos el siguiente ejemplo:
 
-```{r ejemplo_uniones, echo=FALSE}
+```{r ejemplo_uniones}
 x <- tribble(
   ~key, ~val_x,
   1, "x1",
@@ -100,7 +104,7 @@ En la unión que mostramos, las coincidencias se indican con puntos. El número 
 
 El output de una unión interior es un nuevo data frame que contiene la clave, los valores de x y los valores de y. Usamos by (según) para indicar a dplyr qué variable es la clave:
 
-```{r union_interior, echo=FALSE}
+```{r union_interior}
 x %>%
   inner_join(y, by = "key")
 ```
@@ -125,7 +129,7 @@ Hay dos posibilidades:
 
 ![](duplicadas1.PNG){width=60%}
 
-```{r duplicadas_unomuchos, echo=FALSE}
+```{r duplicadas_unomuchos}
 x <- tribble(
  ~key, ~val_x,
  1, "x1",
@@ -145,8 +149,7 @@ duplicadauno
 
 ![](duplicadas2.PNG){width=60%}
 
-
-```{r duplicadas2, echo=FALSE}
+```{r claves_duplic2}
  x <- tribble(
  ~key, ~val_x,
  1, "x1",
@@ -186,7 +189,7 @@ vuelos2 %>%
 
 Un vector de caracteres con nombres: by = c("a" = "b"). Esto va a unir la variable a en la tabla x con la variabla b en la tabla y. Las variables de x se usarán en el output.
 
-```{r vector_caract, echo=FALSE}
+```{r vector_caract}
 #vuelos2 %>%
  #left_join(aeropuertos, by="codigo_aeropuerto")
 
@@ -202,7 +205,7 @@ vuelos2 %>%
 
 
 
-## Ejercicios
+### Ejercicios
 
 1. Calcula el atraso promedio por destino y luego une los datos en aeropuertos para que puedas mostrar la distribución espacial de los atrasos. Esta es una forma fácil de dibujar un mapa de los Estados Unidos:
 ```{r, }
@@ -303,7 +306,7 @@ vuelos %>%
   scale_colour_viridis_c()
 ```
 
-## Otras implementaciones
+### Otras implementaciones
 
 La ventaja de los verbos específicos de dplyr es que muestran de manera clara la intención del código: la diferencia entre las uniones es realmente importante pero se esconde en los argumentos de merge().
 
@@ -319,8 +322,9 @@ Unir distintas variables entre tablas, por ejemplo inner_join(x, y, by = c("a" =
 # Uniones de filtro
 Las uniones de filtro unen observaciones de la misma forma que las uniones de transformación pero afectan a las observaciones, no a las variables. Existen dos tipos:
 
--*semi_join(x, y)* mantiene todas las observaciones en x con coincidencias en y.
--*anti_join(x, y)* descarta todas las observaciones en x con coincidencias en y.
+* *semi_join(x, y)* mantiene todas las observaciones en x con coincidencias en y.
+
+* *anti_join(x, y)* descarta todas las observaciones en x con coincidencias en y.
 
 Las semi uniones son útiles para unir tablas resumen previamente filtradas con las filas originales.
 ```{r destino_populares, echo=TRUE}
@@ -415,14 +419,12 @@ vuelos %>%
 una referencia cruzada con la tabla `clima`. ¿Puedes observar patrones?
 
 
-Haremos el desarrollo considerando las horas con mayor acumulación de atrasos en
-la salida. El otro caso queda como ejercicio.
+Haremos el desarrollo considerando las horas con mayor acumulación de atrasos, tanto para la salida como para la llegada.
 
-El ejercicio no pide que sean los dos peores días, sino las peores 48 horas,
-por lo que debemos tomar las peores horas en el transcurso de varios días.
+El ejercicio pide las peores 48 horas,por lo que debemos tomar las peores horas en el transcurso de varios días.
 
-```{r peores_horas, echo=TRUE}
-peores_horas <- vuelos %>%
+```{r peores_horas_salida}
+peores_horas_salidas <- vuelos %>%
   mutate(hora = salida_programada %/% 100) %>%
   group_by(origen, anio, mes, dia, hora) %>%
   summarise(atraso_salida = mean(atraso_salida, na.rm = TRUE)) %>%
@@ -431,9 +433,22 @@ peores_horas <- vuelos %>%
   slice(1:48)
 ```
 
+```{r peores_horas_llegada}
+peores_horas_llegada<- vuelos %>%
+  mutate(hora = llegada_programada %/% 100) %>%
+  group_by(origen, anio, mes, dia, hora) %>%
+  summarise(atraso_llegada = mean(atraso_llegada, na.rm = TRUE)) %>%
+  ungroup() %>%
+  arrange(desc(atraso_llegada)) %>%
+  slice(1:48)
+```
+
 Este resultado se debe unir con la tabla `clima`.
 ```{r}
-clima_peores_horas <- semi_join(clima, peores_horas, 
+clima_peores_horas_salidas <- semi_join(clima, peores_horas_salidas, 
+                                  by = c("origen", "anio", "mes", "dia", "hora"))
+
+clima_peores_horas_llegadas <- semi_join(clima, peores_horas_llegada, 
                                   by = c("origen", "anio", "mes", "dia", "hora"))
 ```
 
@@ -443,17 +458,23 @@ temperatura. Muchas de estas observaciones tienen una velocidad del viento
 por sobre el promedio (10 millas por hora) o lluvias.
 
 ```{r}
-select(clima_peores_horas, temperatura, velocidad_viento, precipitacion) %>%
+select(clima_peores_horas_salidas, temperatura, velocidad_viento, precipitacion) %>%
   print(n = 48)
+
+select(clima_peores_horas_llegadas, temperatura, velocidad_viento, precipitacion) %>%
+  print(n = 48)
+
 ```
 
 ```{r}
-ggplot(clima_peores_horas, aes(x = precipitacion, y = velocidad_viento, color = temperatura)) +
+ggplot(clima_peores_horas_salidas, aes(x = precipitacion, y = velocidad_viento, color = temperatura)) +
+  geom_point()
+
+ggplot(clima_peores_horas_llegadas, aes(x = precipitacion, y = velocidad_viento, color = temperatura)) +
   geom_point()
 ```
 
-Para extenderse con mayor detalle en ese ejercicio, es necesario usar las
-herramientas del capítulo Análisis Exploratorio de Datos.
+
 
 
 **5** ¿Qué te indica `anti_join(vuelos, aeropuertos, by = c("destino" = "codigo_aeropuerto"))`?
@@ -505,7 +526,7 @@ aviones_transferidos <- aerolinea_avion %>%
 aviones_transferidos
 ```
 
-## Problemas con las uniones
+# Problemas con las uniones
 Aquí se explica como sería una buena manera de limpiar los datos, ya que los datos usados en este capítulo están limpios. Tus datos difícilmente estarán tan ordenados, por lo que hay algunas consideraciones y pasos a tener en cuenta para que las uniones funcionen adecuadamente sobre tus propios datos.
 
 **1** Comienza identificando las variables que forman las claves primarias en cada tabla. Usualmente debieras hacerlo considerando tus conocimientos de los datos, no observando empíricamente las combinaciones de variables que resultan en un identificador único. Si te centras en las variables sin pensar en sus significados, puedes tener la (mala) suerte de encontrar una combinación única en tus datos pero que no sea válida en general.
@@ -524,7 +545,7 @@ Si tienes claves perdidas, debes tener cuidado en el uso de unión interior vers
 
 Ten en cuenta que verificar el número de filas antes y después de unir no es suficiente para asegurar que la unión funcionó de forma exitosa. Si tienes una unión interior con claves duplicadas en ambas tablas, puedes tener la mala suerte de que el número de filas descartadas sea igual al número de filas duplicadas.
 
-## Operaciones de conjuntos
+# Operaciones de conjuntos
 
 Si bien lo usamos de manera poco frecuente, en ocasiones es útil cuando quieres dividir un filtro complejo en partes maś simples. Todas estas operaciones funcionan con una fila completa, comparando los valores de cada variable. Esto espera que los input x e y tengan las mismas variables y trata las observaciones como conjuntos:
 
