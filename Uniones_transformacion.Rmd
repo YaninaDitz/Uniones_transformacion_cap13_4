@@ -420,7 +420,7 @@ vuelos %>%
 
 **3** Combina datos::vehiculos y datos::comunes para encontrar los registros de los modelos más comunes.
 
-Puede pasar que dos fabricantes tengan un mismo modelo de auto, para evitar eso consideremos dos variables
+Puede pasar que dos fabricantes tengan un mismo modelo de auto, para evitar eso consideremos dos variables. Es decir, además de considerar el modelo, también tengamos en cuenta el fabricante. 
 ```{r}
 datos::vehiculos
 datos::comunes
