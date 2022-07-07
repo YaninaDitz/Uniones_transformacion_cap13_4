@@ -1,0 +1,80 @@
+---
+title: "Cap 14_ Cadena de caracteres"
+author: "Ditz Yanina"
+date: '2022-07-06'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(tidyverse)
+library(datos)
+library(stringr)
+```
+Longitud de la cadena de caracteres
+```{r}
+str_length(c("Hola", "Yanina"))
+```
+Para combinar cadenas de caraxteres
+```{r}
+str_c(c("Hola","Yanina"))
+
+str_c("Hola","Yanina", sep=" ")
+```
+str_c() es una función vectorizada que automáticamente recicla los vectores más cortos hasta alcanzar la extensión del más largo.
+
+
+```{r}
+nombre <- "Yani"
+hora_del_dia <- "mañana"
+cumpleanios <- TRUE
+
+str_c(
+  "Que tengas una buena ", hora_del_dia, ", ", nombre,
+  if (cumpleanios) " y ¡FELIZ CUMPLEAÑOS!",
+  "."
+)
+#> [1] "Que tengas una buena mañana, Hadley."
+```
+
+```{r}
+str_c(c("Hola","Yanina"), collapse = " ") #Observar que con el parámetro collapse, obtenemos un vector de cadenas en una sola
+```
+# Dividiri cadenas 
+```{r}
+x <- c("Manzana", "Plátano", "Pera")
+str_sub(x, 2, 4)
+
+# los números negativos cuentan de manera invertida desde el final
+str_sub(x, -2, -1)
+
+```
+
+## 14.2.7.1 Ejercicios
+**1.** Explica por qué cada una de estas cadenas no coincide con \: "\", "\\", "\\\".
+```{r}
+x1 <- "a\b"
+
+
+writeLines(x1)
+
+str_view(x1,"\" )
+```
+```{r}
+x2<- "a\\b"
+
+writeLines(x2)
+
+str_view(x2,"\\")
+```
+```{r}
+x3<-"a\\\b"
+writeLines(x3)
+```
+
+
+¿Cómo harías coincidir la secuencia "'\?
+
+¿Con qué patrones coincidiría la expresión regular\..\..\..? ¿Cómo la representarías en una cadena?
