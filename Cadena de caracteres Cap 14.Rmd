@@ -8,25 +8,82 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-```{r}
+```{r libraries,include=FALSE}
 library(tidyverse)
 library(datos)
 library(stringr)
 ```
-Longitud de la cadena de caracteres
+### Cadena de caracteres 
+
+## Elementos básicos
+
+Para incluir comillas simples o dobles de manera literal en una cadena puedes utilizar \ para “escaparlas” (“escapar” viene de la tecla escape):
+
+```{r comillas, echo=TRUE}
+comillas_dobles<- '\"'#no funciona
+
+comillas_simples<- '\''
+```
+
 ```{r}
+comillas_dobles
+comillas_simples
+```
+Ten cuidado con el hecho de que la representación impresa de una cadena no es equivalente a la cadena misma, ya que la representación muestra las barras utilizadas para “escapar” caracteres, es decir, para sean interpretados en su sentido literal, no como caracteres especiales. Para ver el contenido en bruto de una cadena utiliza writeLines()
+```{r writeline, echo=TRUE}
+x <- c("\"", "\\")
+x
+#> [1] "\"" "\\"
+writeLines(x)
+#> "
+#> \
+```
+Existe una serie de otros caracteres especiales. Los más comunes son "\n", para salto de línea, y "\t", para tabulación. Puedes ver la lista completa pidiendo ayuda acerca de ": ?'"' o ?"'".
+
+* \n	newline
+* \r	carriage return
+* \t	tab
+* \b	backspace
+* \a	alert (bell)
+* \f	form feed
+* \v	vertical tab
+* \\	backslash \
+* \'	ASCII apostrophe '
+* \"	ASCII quotation mark "
+* \`	ASCII grave accent (backtick) `
+
+# Largo de cadenas
+Longitud de la cadena de caracteres
+```{r longitud, echo=TRUE}
 str_length(c("Hola", "Yanina"))
 ```
-Para combinar cadenas de caraxteres
+El prefijo común str_ es particularmente útil si utilizas RStudio, ya que al escribir str_ se activa el autocompletado, lo que te permite ver todas las funciones de stringr.
+
+# Combinar cadenas 
 ```{r}
 str_c(c("Hola","Yanina"))
 
 str_c("Hola","Yanina", sep=" ")
-```
-str_c() es una función vectorizada que automáticamente recicla los vectores más cortos hasta alcanzar la extensión del más largo.
 
+
+```
+Al igual que en muchas otras funciones de R, los valores faltantes son contagiosos. Si quieres que se impriman como "NA", utiliza str_replace_na() (replace = remplazar):
 
 ```{r}
+x <- c("abc", NA)
+str_c(x)
+#> [1] "|-abc-|" NA
+str_c("-", str_replace_na(x), "-")
+#> [1] "|-abc-|" "|-NA-|"
+```
+
+
+
+str_c() es una función vectorizada que automáticamente recicla los vectores más cortos hasta alcanzar la extensión del más largo.
+Los objetos de extensión 0 se descartan de manera silenciosa. Esto es particularmente útil en conjunto con if (si):
+
+
+```{r ext0, echo=TRUE}
 nombre <- "Yani"
 hora_del_dia <- "mañana"
 cumpleanios <- TRUE
@@ -39,11 +96,14 @@ str_c(
 #> [1] "Que tengas una buena mañana, Hadley."
 ```
 
-```{r}
+Para colapsar un vector de cadenas en una sola, utiliza collapse:
+```{r colapsar, echo=TRUE}
 str_c(c("Hola","Yanina"), collapse = " ") #Observar que con el parámetro collapse, obtenemos un vector de cadenas en una sola
 ```
-# Dividiri cadenas 
-```{r}
+
+# Dividir cadenas 
+Puedes extraer partes de una cadena utilizando str_sub(). Al igual que la cadena, str_sub() tiene como argumentos start (inicio) y end (fin), que indican la posición (inclusiva) del subconjunto que se quiere extraer:
+```{r dividir, echo=TRUE}
 x <- c("Manzana", "Plátano", "Pera")
 str_sub(x, 2, 4)
 
@@ -51,8 +111,134 @@ str_sub(x, 2, 4)
 str_sub(x, -2, -1)
 
 ```
+Ten en cuenta que str_sub() no fallará si la cadena es muy corta; simplemente devolverá todo lo que sea posible:
 
-## 14.2.7.1 Ejercicios
+También puedes utilizar str_sub() en forma de asignación para modificar una cadena:
+
+```{r may_min, echo=TRUE}
+str_sub(x, 1, 1) <- str_to_lower(str_sub(x, 1, 1))
+x
+```
+# Locales
+
+Arriba utilizamos str_to_lower() para cambiar el texto a minúsculas. También puedes utilizar str_to_upper() o str_to_title(), si quieres modificar el texto a mayúsculas o formato título, respectivamente. Sin embargo, este tipo de cambios puede ser más complicado de lo parece a primera vista, ya que las reglas no son iguales en todos los idiomas. Puedes selecionar qué tipo de reglas aplicar especificando el entorno local o locale.
+
+
+Otra operación importante que es afectada por el locale es ordenar. Las funciones order() y sort() de R base ordenan las cadenas usando el locale actual. Si quieres un comportamiento consistente a través de diferentes computadoras, sería preferible usar str_sort() y str_order(), que aceptan un argumento adicional para definir el locale:
+
+
+```{r local, echo=TRUE}
+x <- c("arándano", "espinaca", "banana")
+
+str_sort(x, locale = "es") 
+
+str_sort(x, locale = "ca")
+```
+# 14.2.5 Ejercicios
+**1.** En ejemplos de código en los que no se utiliza stringr, verás usualmente paste() y paste0() (paste = pegar). ¿Cuál es la diferencia entre estas dos funciones? ¿A qué función de stringr son equivalentes? ¿Cómo difieren estas dos funciones respecto de su manejo de los NA? 
+
+_Rta_: El paste toma el separete, el paste0 no. El paste es parecido al str_c(). No diferencia respecto del tratamiento de los NA, pero si los toma como caracteres. 
+```{r ej5-1, echo=TRUE}
+paste("A", 1:6, sep = ",")
+paste0("A", 1:6, sep=",")
+```
+```{r}
+foo <- LETTERS[1:4]
+foo[4] <- NA
+foo
+
+paste(1:4, foo, sep = ", ")
+paste0(1:4, foo, sep=", ")
+
+paste(NA)
+paste0(NA)
+```
+**2** Describe con tus propias palabras la diferencia entre los argumentos sep y collapse de la función str_c().
+```{r}
+paste(1:4, foo, sep = ", ")
+paste(1:4, foo, collapse = ", ")
+```
+
+_Rta._: La diferencia es que con collapse se obtiene un sola cadena.
+
+
+**3** Utiliza str_length() y str_sub() para extraer el caracter del medio de una cadena. ¿Qué harías si el número de caracteres es par?
+Pra este último caso tomaría los dos del medio.
+```{r}
+z<- "Mauri"
+str_length(z)
+str_sub(z, (str_length(z)+1)/2,(str_length(z)+1)/2)
+
+y<-"yani"
+str_length(y)
+str_sub(y,str_length(y)/2,str_length(y)/2 + 1)
+
+```
+**4** ¿Qué hace str_wrap()? (wrap = envolver) ¿Cuándo podrías querer utilizarla? _Rta.:_ La función str_wrap() formatea los párrafos de una oración de manera tal que quede más lindo a la vista. Se usa cuando tenés párrafos.
+```{r}
+thanks_path <- file.path(R.home("doc"), "THANKS")
+thanks <- str_c(readLines(thanks_path), collapse = "\n")
+thanks <- word(thanks, 1, 3, fixed("\n\n"))
+cat(str_wrap(thanks), "\n")
+cat(str_wrap(thanks, width = 40), "\n")
+cat(str_wrap(thanks, width = 60, indent = 2), "\n")
+cat(str_wrap(thanks, width = 60, exdent = 2), "\n")
+cat(str_wrap(thanks, width = 0, exdent = 2), "\n")
+```
+
+**5** ¿Qué hace str_trim()? (trim = recortar) ¿Cuál es el opuesto de str_trim()? _Rta.:_ str_trim() remueve los espacios en blanco del comienzo y del final del caracter.
+
+```{r str_trim, echo=TRUE}
+"  String with trailing and leading white space\t"
+str_trim("  String with trailing and leading white space\t")
+
+"\n\nString with trailing and leading white space\n\n"
+str_trim("\n\nString with trailing and leading white space\n\n")
+
+```
+El opuesto es str_pad() que agrega espacio en blancos.
+
+```{r}
+str_pad(c("a", "abc", "abcdef"), 10)
+str_pad("a", c(5, 10, 20))
+str_pad("a", 10, pad = c("-", "_", " "))
+
+
+```
+```{r}
+y=c("a","b")
+length(y)
+str_c(y, collapse = " y ")
+```
+
+**6** Escribe una función que convierta, por ejemplo, el vector c("a", "b", "c") en la cadena a, b y c. Piensa con detención qué debería hacer dado un vector de largo 0, 1 o 2.
+
+```{r funcion, echo=TRUE}
+
+x<-c()
+
+conversion<-function(x, delim=","){
+  if (length(x)==0){
+    return("")}
+  else if (length(x)==1){
+    return(str_c(x))}  
+  else if (length(x)==2){
+    return(str_c(x, collapse=" y "))}
+  else{
+    return(str_c(x[1],",",x[2], " y ",x[3]))}
+}
+  
+```
+
+```{r conversion, echo=TRUE}
+conversion(c("a","b","c"))
+conversion(c())
+conversion(c("a"))
+conversion(c("a","b"))
+```
+
+
+# 14.2.7.1 Ejercicios
 **1.** Explica por qué cada una de estas cadenas no coincide con \: "\", "\\", "\\\".
 ```{r}
 x1 <- "a\b"
