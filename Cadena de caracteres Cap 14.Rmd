@@ -236,6 +236,47 @@ conversion(c())
 conversion(c("a"))
 conversion(c("a","b"))
 ```
+# Buscar coincidencias de patrones con expresiones regulares
+
+Para aprender sobre expresiones regulares usaremos str_view() y str_view_all() (view = ver). Estas funciones toman un vector de caracteres y una expresión regular y te muestran cómo coinciden.
+
+
+# 14.2.7 Coincidencias básicas
+Los patrones más simples buscan coincidencias con cadenas exactas:
+
+```{r}
+x <- c("manzana", "banana", "pera")
+str_view(x, "na")
+```
+
+El siguiente paso en complejidad es ., que coincide con cualquier caracter (excepto un salto de línea):
+
+```{r}
+str_view(x, ".a.")
+```
+Al igual que en las cadenas, las expresiones regulares usan la barra invertida, \, para “escapar” los comportamientos especiales. Por lo tanto, para hacer coincidir un ., necesitas la expresión regular \.. Lamentablemente, esto crea una problema. Estamos usando cadenas para representar una expresión regular y en ellas \ también se usa como símbolo de “escape”. Por lo tanto, para crear la expresión regular \. necesitamos la cadena "\\.".
+
+```{r}
+# Para crear una expresión regular necesitamos \\
+punto <- "\\."
+
+# Pero la expresión en sí misma solo contiene una \
+writeLines(punto)
+#> \.
+
+# Esto le dice a R que busque el . de manera explícita
+str_view(c("abc", "a.c", "bef"), "a\\.c")
+```
+```{r}
+x <- "a\\b"
+writeLines(x)
+#> a\b
+
+str_view(x, "\\\\")
+```
+En este libro escribiremos las expresiones regulares como \. y las cadenas que representan a las expresiones regulares como "\\.".
+
+
 
 
 # 14.2.7.1 Ejercicios
@@ -246,7 +287,7 @@ x1 <- "a\b"
 
 writeLines(x1)
 
-str_view(x1,"\" )
+str_view(x1,"\\\\" )
 ```
 ```{r}
 x2<- "a\\b"
@@ -258,6 +299,7 @@ str_view(x2,"\\")
 ```{r}
 x3<-"a\\\b"
 writeLines(x3)
+str_view(x3,"\\\")
 ```
 
 
