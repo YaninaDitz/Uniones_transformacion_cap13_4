@@ -305,4 +305,22 @@ str_view(x3,"\\\")
 
 ¿Cómo harías coincidir la secuencia "'\?
 
+
+```{r}
+
+y <- "\"'\\"
+writeLines(y)
+
+
+str_view(y,"\\\"'\\\\")
+```
+
 ¿Con qué patrones coincidiría la expresión regular\..\..\..? ¿Cómo la representarías en una cadena?
+```{r}
+x <- c("ab.cd.ef", ".1. .3.", "a.b.c", "\\.\\.\\.")
+str_view(x, "\\..\\..\\..")
+
+x <- c("abc.d.e.f", ".1. .3", ".a.b.c", "\\.\\.\\.")
+str_view(x, "\\..\\..\\..")
+```
+
